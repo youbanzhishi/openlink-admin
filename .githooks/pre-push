@@ -1,0 +1,20 @@
+#!/bin/bash
+# pre-push hook：禁止强推 + 禁止删除远程分支
+while read -r local_ref local_hash remote_ref remote_hash; do
+  # 检查是否删除远程分支
+  if [ "$local_hash" = "0000000000000000000000000000000000000000" ]; then
+    echo "❌ 禁止删除远程分支：$remote_ref"
+    echo "   如需删除，请主人手动操作"
+    exit 1
+  fi
+  # 检查是否非快进推送（强推）
+  if [ "$remote_hash" != "0000000000000000000000000000000000000000" ]; then
+    if ! git merge-base --is-ancestor "$remote_hash" "$local_hash" 2>/dev/null; then
+      echo "❌ 检测到非快进推送，这等于强推！"
+      echo "   本地：$local_hash"
+      echo "   远程：$remote_hash"
+      echo "   如确需强推，请主人手动执行 git push --force"
+      exit 1
+    fi
+  fi
+done

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLink 管理后台</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.13.3"></script>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body x-data="app()" x-init="init()">
+    <!-- 移动端顶部导航 -->
+    <header class="mobile-header">
+        <button class="menu-btn" @click="sidebarOpen = !sidebarOpen">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12h18M3 6h18M3 18h18"/>
+            </svg>
+        </button>
+        <h1>OpenLink</h1>
+        <button class="user-btn" @click="showUserMenu = !showUserMenu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+            </svg>
+        </button>
+    </header>
+
+    <!-- 侧边栏 -->
+    <aside class="sidebar" :class="{ 'open': sidebarOpen }">
+        <div class="logo">
+            <span class="logo-icon">🔗</span>
+            <span class="logo-text">OpenLink</span>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'dashboard' }" @click.prevent="switchView('dashboard')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/>
+                    <rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>
+                </svg>
+                <span>仪表盘</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'links' }" @click.prevent="switchView('links')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span>链接管理</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'routes' }" @click.prevent="switchView('routes')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+                </svg>
+                <span>路由规则</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'files' }" @click.prevent="switchView('files')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                </svg>
+                <span>文件传输</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'extensions' }" @click.prevent="switchView('extensions')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>
+                </svg>
+                <span>扩展管理</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'stats' }" @click.prevent="switchView('stats')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>数据统计</span>
+            </a>
+            <a href="#" class="nav-item" :class="{ 'active': currentView === 'settings' }" @click.prevent="switchView('settings')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                <span>系统设置</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 遮罩层（移动端） -->
+    <div class="overlay" :class="{ 'show': sidebarOpen }" @click="sidebarOpen = false"></div>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 仪表盘 -->
+        <section x-show="currentView === 'dashboard'" x-cloak>
+            <div class="page-header">
+                <h2>仪表盘</h2>
+                <button class="btn btn-primary" @click="refreshData()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    刷新
+                </button>
+            </div>
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #3b82f6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">总链接数</span>
+                        <span class="stat-value" x-text="stats.totalLinks">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #10b981;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">今日点击</span>
+                        <span class="stat-value" x-text="stats.todayClicks">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #f59e0b;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">文件数量</span>
+                        <span class="stat-value" x-text="stats.totalFiles">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #8b5cf6;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">扩展数量</span>
+                        <span class="stat-value" x-text="stats.totalExtensions">-</span>
+                    </div>
+                </div>
+            </div>
+            <!-- 最近活动 -->
+            <div class="card">
+                <h3>最近链接</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>短码</th>
+                                <th>目标URL</th>
+                                <th>创建时间</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="link in recentLinks" :key="link.code">
+                                <tr>
+                                    <td><code x-text="link.code"></code></td>
+                                    <td class="url-cell" x-text="link.target"></td>
+                                    <td x-text="formatDate(link.created_at)"></td>
+                                    <td>
+                                        <span class="badge" :class="link.is_active ? 'badge-success' : 'badge-error'" 
+                                              x-text="link.is_active ? '启用' : '禁用'"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 链接管理 -->
+        <section x-show="currentView === 'links'" x-cloak>
+            <div class="page-header">
+                <h2>链接管理</h2>
+                <button class="btn btn-primary" @click="showCreateLink = true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    创建链接
+                </button>
+            </div>
+            <!-- 搜索过滤 -->
+            <div class="card">
+                <div class="filter-bar">
+                    <input type="text" class="input" placeholder="搜索短码..." x-model="linkFilters.code" @input.debounce.300ms="loadLinks()">
+                    <input type="text" class="input" placeholder="搜索目标URL..." x-model="linkFilters.target" @input.debounce.300ms="loadLinks()">
+                    <select class="input" x-model="linkFilters.is_active" @change="loadLinks()">
+                        <option value="">全部状态</option>
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>短码</th>
+                                <th>目标URL</th>
+                                <th>所有者</th>
+                                <th>创建时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="link in links" :key="link.code">
+                                <tr>
+                                    <td><code x-text="link.code"></code></td>
+                                    <td class="url-cell" x-text="link.target"></td>
+                                    <td x-text="link.owner || '-'"></td>
+                                    <td x-text="formatDate(link.created_at)"></td>
+                                    <td>
+                                        <span class="badge" :class="link.is_active ? 'badge-success' : 'badge-error'" 
+                                              x-text="link.is_active ? '启用' : '禁用'"></span>
+                                    </td>
+                                    <td>
+                                        <div class="action-btns">
+                                            <button class="btn-icon" title="编辑" @click="editLink(link)">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-icon btn-danger" title="删除" @click="deleteLink(link.code)">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 分页 -->
+                <div class="pagination" x-show="links.length > 0">
+                    <button class="btn btn-sm" :disabled="linkFilters.offset === 0" @click="linkFilters.offset -= linkFilters.limit; loadLinks()">上一页</button>
+                    <span>显示 <span x-text="linkFilters.offset + 1"></span>-<span x-text="linkFilters.offset + links.length"></span> 条</span>
+                    <button class="btn btn-sm" :disabled="links.length < linkFilters.limit" @click="linkFilters.offset += linkFilters.limit; loadLinks()">下一页</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 路由规则 -->
+        <section x-show="currentView === 'routes'" x-cloak>
+            <div class="page-header">
+                <h2>路由规则</h2>
+                <button class="btn btn-primary" @click="showCreateRoute = true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    创建规则
+                </button>
+            </div>
+            <div class="card">
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>链接</th>
+                                <th>条件</th>
+                                <th>目标</th>
+                                <th>优先级</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="route in routes" :key="route.link_id">
+                                <tr>
+                                    <td><code x-text="route.link_id"></code></td>
+                                    <td x-text="JSON.stringify(route.condition)"></td>
+                                    <td x-text="route.default_action?.value || '-'"></td>
+                                    <td x-text="route.priority || '-'"></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" @click="deleteRoute(route.link_id)">删除</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 文件传输 -->
+        <section x-show="currentView === 'files'" x-cloak>
+            <div class="page-header">
+                <h2>文件传输</h2>
+            </div>
+            <div class="card">
+                <h3>上传文件</h3>
+                <div class="upload-zone" @dragover.prevent @drop.prevent="handleFileDrop($event)">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <p>拖拽文件到此处，或点击选择</p>
+                    <input type="file" id="fileInput" @change="handleFileSelect($event)" hidden>
+                    <button class="btn btn-outline" onclick="document.getElementById('fileInput').click()">选择文件</button>
+                </div>
+                <div class="upload-progress" x-show="uploading" x-cloak>
+                    <div class="progress-bar">
+                        <div class="progress-fill" :style="'width: ' + uploadProgress + '%'"></div>
+                    </div>
+                    <span x-text="uploadProgress + '%'"></span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>我的文件</h3>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>文件名</th>
+                                <th>大小</th>
+                                <th>分享码</th>
+                                <th>过期时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="file in files" :key="file.file_id">
+                                <tr>
+                                    <td x-text="file.filename"></td>
+                                    <td x-text="formatSize(file.size)"></td>
+                                    <td><code x-text="file.share_code || '-'"></code></td>
+                                    <td x-text="file.expires_at ? formatDate(file.expires_at) : '-'"></td>
+                                    <td>
+                                        <button class="btn btn-sm" @click="copyShareLink(file.share_code)">复制链接</button>
+                                        <button class="btn btn-sm btn-danger" @click="deleteFile(file.file_id)">删除</button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 扩展管理 -->
+        <section x-show="currentView === 'extensions'" x-cloak>
+            <div class="page-header">
+                <h2>扩展管理</h2>
+                <button class="btn btn-primary" @click="refreshExtensions()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                    </svg>
+                    刷新
+                </button>
+            </div>
+            <div class="extensions-grid">
+                <template x-for="ext in extensions" :key="ext.name">
+                    <div class="extension-card">
+                        <div class="ext-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            </svg>
+                        </div>
+                        <h4 x-text="ext.name"></h4>
+                        <p x-text="ext.description || '暂无描述'"></p>
+                        <div class="ext-actions">
+                            <button class="btn btn-sm" @click="executeExtAction(ext.name)">执行</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <!-- 数据统计 -->
+        <section x-show="currentView === 'stats'" x-cloak>
+            <div class="page-header">
+                <h2>数据统计</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">总PV</div>
+                    <div class="stat-value" x-text="stats.totalPV">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">总UV</div>
+                    <div class="stat-value" x-text="stats.totalUV">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">平均响应时间</div>
+                    <div class="stat-value" x-text="stats.avgResponseTime + 'ms'">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">成功率</div>
+                    <div class="stat-value" x-text="stats.successRate + '%'">-</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 系统设置 -->
+        <section x-show="currentView === 'settings'" x-cloak>
+            <div class="page-header">
+                <h2>系统设置</h2>
+            </div>
+            <div class="card">
+                <h3>API 配置</h3>
+                <div class="form-group">
+                    <label>API Base URL</label>
+                    <input type="text" class="input" x-model="settings.apiBase" placeholder="http://localhost:3000">
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" class="input" x-model="settings.apiKey" placeholder="请输入API Key">
+                </div>
+                <button class="btn btn-primary" @click="saveSettings()">保存配置</button>
+            </div>
+            <div class="card">
+                <h3>系统信息</h3>
+                <div class="info-row">
+                    <span class="info-label">版本</span>
+                    <span class="info-value">OpenLink v1.0.1</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">状态</span>
+                    <span class="badge badge-success" x-text="healthStatus"></span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 创建链接弹窗 -->
+    <div class="modal" x-show="showCreateLink" x-cloak>
+        <div class="modal-backdrop" @click="showCreateLink = false"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>创建链接</h3>
+                <button class="btn-icon" @click="showCreateLink = false">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>目标URL *</label>
+                    <input type="url" class="input" x-model="newLink.target" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                    <label>自定义短码</label>
+                    <input type="text" class="input" x-model="newLink.code" placeholder="留空自动生成">
+                </div>
+                <div class="form-group">
+                    <label>元数据 (JSON)</label>
+                    <textarea class="input" x-model="newLink.metadata" placeholder='{"tag": "marketing"}'></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" @click="showCreateLink = false">取消</button>
+                <button class="btn btn-primary" @click="createLink()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/app.js"></script>
+</body>
+</html>
